@@ -20,6 +20,17 @@ foreach ($cursorIterator as $testEntity) {
 }
 ```
 
+DoctrineCursorIterator will hold only 100 records in memory to prevent memory leaks and efficiently iterate through
+even large datasets.
+
+First sql:
+
+```SELECT ... FROM table ORDER BY id ASC LIMIT 100```
+
+Next:
+
+```SELECT ... FROM table WHERE id > {$id_from_last_record} ORDER BY id ASC LIMIT 100```
+
 You can also specify more order by fields
 
 ```php
