@@ -79,9 +79,9 @@ class DoctrineCursorIterator implements IteratorAggregate
                     $orderByProperty = $order_by_properties[$i];
 
                     $comparison = new Expr\Comparison(
-                        leftExpr: $orderByProperty['field'],
-                        operator: $orderByProperty['is_asc'] ? Expr\Comparison::GT : Expr\Comparison::LT,
-                        rightExpr: ':' . $orderByProperty['property']
+                        $orderByProperty['field'],
+                        $orderByProperty['is_asc'] ? Expr\Comparison::GT : Expr\Comparison::LT,
+                        ':' . $orderByProperty['property']
                     );
 
                     if ($nested === null) {

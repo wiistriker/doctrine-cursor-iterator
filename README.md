@@ -13,9 +13,9 @@ $qb = $testEntityRepository->createQueryBuilder('t')
     ->setMaxResults(100)
 ;
 
-$cursorIterator = new DoctrineCursorIterator();
+$cursorIterator = new DoctrineCursorIterator($qb);
 
-foreach ($cursorIterator->iterate($qb) as $testEntity) {
+foreach ($cursorIterator as $testEntity) {
     //...
 }
 ```
@@ -31,9 +31,30 @@ $qb = $testEntityRepository->createQueryBuilder('t')
     ->setMaxResults(100)
 ;
 
-$cursorIterator = new DoctrineCursorIterator();
+$cursorIterator = new DoctrineCursorIterator($qb);
 
-foreach ($cursorIterator->iterate($qb) as $testEntity) {
+foreach ($cursorIterator as $testEntity) {
     //...
 }
+```
+
+You can change hydration mode
+
+```php
+$cursorIterator = new DoctrineCursorIterator($qb, AbstractQuery::HYDRATE_ARRAY);
+```
+
+And even set query hints
+
+```php
+$cursorIterator = new DoctrineCursorIterator(
+    qb: $qb,
+    queryHints: [
+        'fetchMode' => [
+            TestEntity::class => [
+                'field' => ClassMetadataInfo::FETCH_EAGER
+            ]
+        ]
+    ]
+);
 ```

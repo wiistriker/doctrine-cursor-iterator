@@ -36,6 +36,7 @@ class DoctrineCursorIteratorTest extends TestCase
             ->setMaxResults(100)
         ;
 
+        /** @var DoctrineCursorIterator<TestEntity> $cursorIterator */
         $cursorIterator = new DoctrineCursorIterator($qb);
 
         $cnt = 0;
@@ -76,6 +77,7 @@ class DoctrineCursorIteratorTest extends TestCase
             ->setMaxResults(100)
         ;
 
+        /** @var DoctrineCursorIterator<TestEntity> $cursorIterator */
         $cursorIterator = new DoctrineCursorIterator($qb);
 
         $cnt = 0;
@@ -115,6 +117,7 @@ class DoctrineCursorIteratorTest extends TestCase
             ->setMaxResults(100)
         ;
 
+        /** @var DoctrineCursorIterator<TestEntity> $cursorIterator */
         $cursorIterator = new DoctrineCursorIterator($qb);
 
         $cnt = 0;
@@ -159,6 +162,7 @@ class DoctrineCursorIteratorTest extends TestCase
             ->setMaxResults(100)
         ;
 
+        /** @var DoctrineCursorIterator<TestEntity> $cursorIterator */
         $cursorIterator = new DoctrineCursorIterator($qb);
 
         $cnt = 0;
@@ -194,6 +198,7 @@ class DoctrineCursorIteratorTest extends TestCase
             ->setMaxResults(100)
         ;
 
+        /** @var DoctrineCursorIterator<TestEntity> $cursorIterator */
         $cursorIterator = new DoctrineCursorIterator($qb);
         foreach ($cursorIterator as $testEntity) {
 
@@ -210,6 +215,7 @@ class DoctrineCursorIteratorTest extends TestCase
             ->orderBy('t.createdAt', 'DESC')
         ;
 
+        /** @var DoctrineCursorIterator<TestEntity> $cursorIterator */
         $cursorIterator = new DoctrineCursorIterator($qb);
         foreach ($cursorIterator as $testEntity) {
 
@@ -227,11 +233,11 @@ class DoctrineCursorIteratorTest extends TestCase
         $config->setMiddlewares([new LoggingMiddleware($this->queryLogger)]);
 
         $connection = DriverManager::getConnection(
-            params: [
+            [
                 'driver' => 'pdo_sqlite',
                 'memory' => true
             ],
-            config: $config
+            $config
         );
 
         $this->entityManager = new EntityManager($connection, $config);
