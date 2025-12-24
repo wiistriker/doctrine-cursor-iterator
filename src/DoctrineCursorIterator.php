@@ -17,19 +17,19 @@ use Traversable;
 class DoctrineCursorIterator implements IteratorAggregate
 {
     protected QueryBuilder $qb;
-    protected int $hydrationMode;
-    protected array $queryHints;
+    protected int $hydration_mode;
+    protected array $query_hints;
     protected PropertyAccessorInterface $propertyAccessor;
 
     public function __construct(
         QueryBuilder $qb,
-        int $hydrationMode = AbstractQuery::HYDRATE_OBJECT,
-        array $queryHints = [],
+        int $hydration_mode = AbstractQuery::HYDRATE_OBJECT,
+        array $query_hints = [],
         PropertyAccessorInterface $propertyAccessor = null
     ) {
         $this->qb = $qb;
-        $this->hydrationMode = $hydrationMode;
-        $this->queryHints = $queryHints;
+        $this->hydration_mode = $hydration_mode;
+        $this->query_hints = $query_hints;
         $this->propertyAccessor = $propertyAccessor ?: PropertyAccess::createPropertyAccessor();
     }
 
@@ -76,36 +76,36 @@ class DoctrineCursorIterator implements IteratorAggregate
 
                 $nested = null;
                 for ($i = $order_by_properties_cnt - 1; $i >= 0; $i--) {
-                    $orderByProperty = $order_by_properties[$i];
+                    $order_by_property = $order_by_properties[$i];
 
                     $comparison = new Expr\Comparison(
-                        $orderByProperty['field'],
-                        $orderByProperty['is_asc'] ? Expr\Comparison::GT : Expr\Comparison::LT,
-                        ':' . $orderByProperty['property']
+                        $order_by_property['field'],
+                        $order_by_property['is_asc'] ? Expr\Comparison::GT : Expr\Comparison::LT,
+                        ':' . $order_by_property['property']
                     );
 
                     if ($nested === null) {
                         $nested = $comparison;
                     } else {
-                        $nested = $expr->orX($comparison, $expr->andX($expr->eq($orderByProperty['field'], ':' . $orderByProperty['property']), $nested));
+                        $nested = $expr->orX($comparison, $expr->andX($expr->eq($order_by_property['field'], ':' . $order_by_property['property']), $nested));
                     }
 
-                    $cursorQb->setParameter($orderByProperty['property'], $last_properties_values[$orderByProperty['property']]);
+                    $cursorQb->setParameter($order_by_property['property'], $last_properties_values[$order_by_property['property']]);
                 }
 
                 $cursorQb->andWhere($nested);
             }
 
             $cursorQuery = $cursorQb->getQuery();
-            foreach ($this->queryHints as $hint_name => $hint_value) {
+            foreach ($this->query_hints as $hint_name => $hint_value) {
                 $cursorQuery->setHint($hint_name, $hint_value);
             }
 
             $items_cnt = 0;
-            foreach ($cursorQuery->getResult($this->hydrationMode) as $item) {
-                foreach ($order_by_properties as $orderByProperty) {
-                    $property_path = is_array($item) ? '[' . $orderByProperty['property'] . ']' : $orderByProperty['property'];
-                    $last_properties_values[$orderByProperty['property']] = $this->propertyAccessor->getValue($item, $property_path);
+            foreach ($cursorQuery->getResult($this->hydration_mode) as $item) {
+                foreach ($order_by_properties as $order_by_property) {
+                    $property_path = is_array($item) ? '[' . $order_by_property['property'] . ']' : $order_by_property['property'];
+                    $last_properties_values[$order_by_property['property']] = $this->propertyAccessor->getValue($item, $property_path);
                 }
 
                 yield $item;
