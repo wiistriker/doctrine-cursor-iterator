@@ -1,10 +1,10 @@
-# Doctrine Cursor Iterator for large datasets
+# Doctrine ORM and DBAL Cursor Paginator for large datasets
 
 Iterate through large database results with easy
 
-## Usage
+## Usage for ORM
 
-Create query builder as usual with order by and max results
+Create query builder as usual. Dont forget about `orderBy` and `maxResults`.
 
 ```php
 $testEntityRepository = $this->entityManager->getRepository(TestEntity::class);
@@ -13,14 +13,14 @@ $qb = $testEntityRepository->createQueryBuilder('t')
     ->setMaxResults(100)
 ;
 
-$cursorIterator = new DoctrineCursorIterator($qb);
+$cursorIterator = new DoctrineORMCursorPaginator($qb);
 
 foreach ($cursorIterator as $testEntity) {
     //...
 }
 ```
 
-DoctrineCursorIterator will hold only 100 records in memory to prevent memory leaks and efficiently iterate through
+DoctrineORMCursorPaginator will hold only 100 records in memory to prevent memory leaks and efficiently iterate through
 even large datasets.
 
 First sql:
@@ -68,4 +68,49 @@ $cursorIterator = new DoctrineCursorIterator(
         ]
     ]
 );
+```
+
+You wanna batch? Lets batch:
+
+```php
+$cursorPaginator = new DoctrineORMCursorPaginator($qb);
+
+foreach ($cursorPaginator->batch() as $entities) {
+    foreach ($entities as $testEntity) {
+        $cnt++;
+    }
+}
+```
+
+By default batch size equals to `maxResults` but you can also specify desired amount by yourself:
+
+```php
+$my_batch_size = 1000;
+
+$cursorPaginator = new DoctrineORMCursorPaginator($qb);
+
+foreach ($cursorPaginator->batch($my_batch_size) as $entities) {
+}
+```
+
+## Usage for DBAL
+
+Just use `DoctrineDBALCursorPaginator` instead.
+
+```php
+$queryBuilder = $this->connection->createQueryBuilder();
+
+$queryBuilder
+    ->select('id', 'name')
+    ->from('test')
+    ->orderBy('id', 'ASC')
+    ->setMaxResults(100)
+;
+
+$cursorPaginator = new DoctrineDBALCursorPaginator($queryBuilder);
+
+$cnt = 0;
+foreach ($cursorPaginator as $row) {
+    $cnt++;
+}
 ```

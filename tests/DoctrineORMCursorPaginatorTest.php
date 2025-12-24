@@ -10,15 +10,15 @@ use Doctrine\ORM\Tools\SchemaTool;
 use PHPUnit\Framework\TestCase;
 use ColinODell\PsrTestLogger\TestLogger;
 use Tests\Entity\TestEntity;
-use Wiistriker\DoctrineCursorIterator;
+use Wiistriker\DoctrineORMCursorPaginator;
 use Doctrine\DBAL\Logging\Middleware as LoggingMiddleware;
 
-class DoctrineCursorIteratorTest extends TestCase
+class DoctrineORMCursorPaginatorTest extends TestCase
 {
     private ?EntityManager $entityManager;
     private TestLogger $queryLogger;
 
-    public function testCursorIteratorWithId(): void
+    public function testWithId(): void
     {
         for ($i = 0; $i < 1234; $i++) {
             $entity = new TestEntity('test' . $i, new DateTime('+' . $i . ' seconds'), new DateTime('+' . ($i * 2) . ' seconds'));
@@ -36,11 +36,11 @@ class DoctrineCursorIteratorTest extends TestCase
             ->setMaxResults(100)
         ;
 
-        /** @var DoctrineCursorIterator<TestEntity> $cursorIterator */
-        $cursorIterator = new DoctrineCursorIterator($qb);
+        /** @var DoctrineORMCursorPaginator<TestEntity> $cursorPaginator */
+        $cursorPaginator = new DoctrineORMCursorPaginator($qb);
 
         $cnt = 0;
-        foreach ($cursorIterator as $testEntity) {
+        foreach ($cursorPaginator as $testEntity) {
             $cnt++;
         }
 
@@ -58,7 +58,7 @@ class DoctrineCursorIteratorTest extends TestCase
         }
     }
 
-    public function testCursorIteratorWithIdAndCreatedAt(): void
+    public function testWithIdAndCreatedAt(): void
     {
         for ($i = 0; $i < 1234; $i++) {
             $entity = new TestEntity('test' . $i, new DateTime('+' . $i . ' seconds'), new DateTime('+' . ($i * 2) . ' seconds'));
@@ -77,11 +77,11 @@ class DoctrineCursorIteratorTest extends TestCase
             ->setMaxResults(100)
         ;
 
-        /** @var DoctrineCursorIterator<TestEntity> $cursorIterator */
-        $cursorIterator = new DoctrineCursorIterator($qb);
+        /** @var DoctrineORMCursorPaginator<TestEntity> $cursorPaginator */
+        $cursorPaginator = new DoctrineORMCursorPaginator($qb);
 
         $cnt = 0;
-        foreach ($cursorIterator as $testEntity) {
+        foreach ($cursorPaginator as $testEntity) {
             $cnt++;
         }
 
@@ -98,7 +98,7 @@ class DoctrineCursorIteratorTest extends TestCase
         }
     }
 
-    public function testCursorIteratorAsBatch(): void
+    public function testAsBatch(): void
     {
         for ($i = 0; $i < 1234; $i++) {
             $entity = new TestEntity('test' . $i, new DateTime('+' . $i . ' seconds'), new DateTime('+' . ($i * 2) . ' seconds'));
@@ -117,12 +117,12 @@ class DoctrineCursorIteratorTest extends TestCase
             ->setMaxResults(100)
         ;
 
-        /** @var DoctrineCursorIterator<TestEntity> $cursorIterator */
-        $cursorIterator = new DoctrineCursorIterator($qb);
+        /** @var DoctrineORMCursorPaginator<TestEntity> $cursorPaginator */
+        $cursorPaginator = new DoctrineORMCursorPaginator($qb);
 
         $cnt = 0;
         $batch_cnt = 0;
-        foreach ($cursorIterator->batch() as $testEntities) {
+        foreach ($cursorPaginator->batch() as $testEntities) {
             $batch_cnt++;
             foreach ($testEntities as $testEntity) {
                 $cnt++;
@@ -143,7 +143,7 @@ class DoctrineCursorIteratorTest extends TestCase
         }
     }
 
-    public function testCursorIteratorAsBatchWithExplicitSize(): void
+    public function testAsBatchWithExplicitSize(): void
     {
         for ($i = 0; $i < 1234; $i++) {
             $entity = new TestEntity('test' . $i, new DateTime('+' . $i . ' seconds'), new DateTime('+' . ($i * 2) . ' seconds'));
@@ -162,12 +162,12 @@ class DoctrineCursorIteratorTest extends TestCase
             ->setMaxResults(100)
         ;
 
-        /** @var DoctrineCursorIterator<TestEntity> $cursorIterator */
-        $cursorIterator = new DoctrineCursorIterator($qb);
+        /** @var DoctrineORMCursorPaginator<TestEntity> $cursorPaginator */
+        $cursorPaginator = new DoctrineORMCursorPaginator($qb);
 
         $cnt = 0;
         $batch_cnt = 0;
-        foreach ($cursorIterator->batch(10) as $testEntities) {
+        foreach ($cursorPaginator->batch(10) as $testEntities) {
             $batch_cnt++;
             foreach ($testEntities as $testEntity) {
                 $cnt++;
@@ -188,7 +188,7 @@ class DoctrineCursorIteratorTest extends TestCase
         }
     }
 
-    public function testCursorIteratorWithoutOrderBy(): void
+    public function testWithoutOrderBy(): void
     {
         $this->expectExceptionMessage('No order properties found');
 
@@ -198,14 +198,11 @@ class DoctrineCursorIteratorTest extends TestCase
             ->setMaxResults(100)
         ;
 
-        /** @var DoctrineCursorIterator<TestEntity> $cursorIterator */
-        $cursorIterator = new DoctrineCursorIterator($qb);
-        foreach ($cursorIterator as $testEntity) {
-
-        }
+        /** @var DoctrineORMCursorPaginator<TestEntity> $cursorPaginator */
+        $cursorPaginator = new DoctrineORMCursorPaginator($qb);
     }
 
-    public function testCursorIteratorWithoutMaxResults(): void
+    public function testWithoutMaxResults(): void
     {
         $this->expectExceptionMessage('No max results found');
 
@@ -215,11 +212,23 @@ class DoctrineCursorIteratorTest extends TestCase
             ->orderBy('t.createdAt', 'DESC')
         ;
 
-        /** @var DoctrineCursorIterator<TestEntity> $cursorIterator */
-        $cursorIterator = new DoctrineCursorIterator($qb);
-        foreach ($cursorIterator as $testEntity) {
+        /** @var DoctrineORMCursorPaginator<TestEntity> $cursorPaginator */
+        $cursorPaginator = new DoctrineORMCursorPaginator($qb);
+    }
 
-        }
+    public function testWithNegativeMaxResults(): void
+    {
+        $this->expectExceptionMessage('Max results should be greater than zero.');
+
+        $testEntityRepository = $this->entityManager->getRepository(TestEntity::class);
+        $qb = $testEntityRepository->createQueryBuilder('t')
+            ->select('t.id', 't.createdAt')
+            ->setMaxResults(-100)
+            ->orderBy('t.createdAt', 'DESC')
+        ;
+
+        /** @var DoctrineORMCursorPaginator<TestEntity> $cursorPaginator */
+        $cursorPaginator = new DoctrineORMCursorPaginator($qb);
     }
 
     protected function setUp(): void

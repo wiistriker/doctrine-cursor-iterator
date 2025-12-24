@@ -1,5 +1,5 @@
 {
-    "name": "wiistriker/doctrine-cursor-iterator",
+    "name": "wiistriker/doctrine-cursor-paginator",
     "description": "Iterate through large datasets",
     "keywords": ["symfony","doctrine","deep-page-problem","cursor-based-pagination"],
     "type": "library",
