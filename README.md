@@ -1,10 +1,17 @@
 # Doctrine ORM and DBAL Cursor Paginator for large datasets
 
+[![Latest Version on Packagist][ico-version]][link-packagist]
+[![Software License][ico-license]](LICENSE)
+[![Build Status][ico-travis]][link-travis]
+[![Total Downloads][ico-downloads]][link-downloads]
+
 Iterate through large database results with easy
 
 ## Installation
 
-`composer require wiistriker/doctrine-cursor-paginator`
+```
+composer require wiistriker/doctrine-cursor-paginator
+```
 
 ## Usage for ORM
 
