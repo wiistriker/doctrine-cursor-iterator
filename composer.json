@@ -5,10 +5,14 @@
     "type": "library",
     "license": "MIT",
     "require": {
-        "symfony/property-access": "*",
-        "doctrine/orm": "^2.6 || ^3.0"
+        "symfony/property-access": "*"
+    },
+    "suggest": {
+        "doctrine/orm": "Required to use DoctrineORMCursorPaginator",
+        "doctrine/dbal": "Required to use DoctrineDBALCursorPaginator"
     },
     "require-dev": {
+        "doctrine/orm": "^2.6 || ^3.0",
         "phpunit/phpunit": "^9",
         "symfony/cache": "*",
         "colinodell/psr-testlogger": "^1.3",

@@ -9,6 +9,7 @@ use Symfony\Component\PropertyAccess\PropertyAccess;
 use Symfony\Component\PropertyAccess\PropertyAccessorInterface;
 use Doctrine\ORM\Query\Expr;
 use Traversable;
+use LogicException;
 use Wiistriker\DoctrineCursorPaginator\Exception\InvalidArgumentException;
 
 /**
@@ -31,6 +32,10 @@ class DoctrineORMCursorPaginator implements IteratorAggregate
         array $queryHints = [],
         PropertyAccessorInterface $propertyAccessor = null
     ) {
+        if (!class_exists(QueryBuilder::class)) {
+            throw new LogicException('doctrine/orm is required to use DoctrineORMCursorPaginator. Run: composer require doctrine/orm');
+        }
+
         $orderByProperties = [];
         $orderByPropertiesCnt = 0;
         foreach ($queryBuilder->getDQLPart('orderBy') as $orderByPart) {

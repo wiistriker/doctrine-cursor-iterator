@@ -8,6 +8,7 @@ use ReflectionObject;
 use Symfony\Component\PropertyAccess\PropertyAccess;
 use Symfony\Component\PropertyAccess\PropertyAccessorInterface;
 use Traversable;
+use LogicException;
 use Wiistriker\DoctrineCursorPaginator\Exception\InvalidArgumentException;
 
 class DoctrineDBALCursorPaginator implements IteratorAggregate
@@ -23,6 +24,10 @@ class DoctrineDBALCursorPaginator implements IteratorAggregate
         QueryBuilder $queryBuilder,
         PropertyAccessorInterface $propertyAccessor = null
     ) {
+        if (!class_exists(QueryBuilder::class)) {
+            throw new LogicException('doctrine/dbal is required to use DoctrineDBALCursorPaginator. Run: composer require doctrine/dbal');
+        }
+
         $queryBuilderReflection = new ReflectionObject($queryBuilder);
 
         if ($queryBuilderReflection->hasProperty('sqlParts')) {
