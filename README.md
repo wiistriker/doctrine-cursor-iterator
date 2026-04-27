@@ -2,6 +2,10 @@
 
 Iterate through large database results with easy
 
+## Installation
+
+`composer require wiistriker/doctrine-cursor-paginator`
+
 ## Usage for ORM
 
 Create query builder as usual. Dont forget about `orderBy` and `maxResults`.
