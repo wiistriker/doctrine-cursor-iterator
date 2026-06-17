@@ -31,8 +31,9 @@ foreach ($cursorPaginator as $testEntity) {
 }
 ```
 
-DoctrineORMCursorPaginator will hold only 100 records in memory to prevent memory leaks and efficiently iterate through
-even large datasets.
+DoctrineORMCursorPaginator fetches only 100 records per query, so it never loads the whole dataset into memory at once
+and can efficiently iterate through even large datasets. See [Memory and the EntityManager](#memory-and-the-entitymanager)
+below for an important caveat about object hydration.
 
 First sql:
 
@@ -103,6 +104,31 @@ $cursorPaginator = new DoctrineORMCursorPaginator($qb);
 
 foreach ($cursorPaginator->batch($my_batch_size) as $entities) {
 }
+```
+
+### Memory and the EntityManager
+
+The paginator limits how many rows each query returns, but with the default object hydration
+(`HYDRATE_OBJECT`) Doctrine keeps every hydrated entity in the EntityManager's identity map. Over a large
+dataset that map keeps growing, so the per-query limit alone does **not** keep memory flat. When you iterate
+over many entities, clear the EntityManager periodically (batching makes a natural place to do it):
+
+```php
+foreach ($cursorPaginator->batch() as $entities) {
+    foreach ($entities as $entity) {
+        // ... process the entity
+    }
+
+    $entityManager->clear(); // detach processed entities and free memory
+}
+```
+
+Keep in mind that `clear()` detaches **all** managed entities: flush any pending changes before calling it,
+and don't keep references to entities you still expect to be managed. If you don't need managed objects at all,
+array hydration avoids the identity map entirely and sidesteps the issue:
+
+```php
+$cursorPaginator = new DoctrineORMCursorPaginator($qb, AbstractQuery::HYDRATE_ARRAY);
 ```
 
 ## Usage for DBAL
