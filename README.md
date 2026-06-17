@@ -125,6 +125,22 @@ foreach ($cursorPaginator as $row) {
 }
 ```
 
+DBAL exposes no public getter for the `ORDER BY` clause, so by default the order
+is read from the query builder via reflection. If you prefer to avoid reflection
+(or your DBAL version changes its internals), pass the order explicitly. It must
+mirror the `orderBy()`/`addOrderBy()` calls on the query builder:
+
+```php
+$queryBuilder
+    ->select('id', 'name')
+    ->from('test')
+    ->orderBy('id', 'ASC')
+    ->setMaxResults(100)
+;
+
+$cursorPaginator = new DoctrineDBALCursorPaginator($queryBuilder, ['id' => 'ASC']);
+```
+
 [ico-version]: https://img.shields.io/packagist/v/wiistriker/doctrine-cursor-paginator.svg?style=flat-square
 [ico-license]: https://img.shields.io/badge/license-MIT-brightgreen.svg?style=flat-square
 [ico-downloads]: https://img.shields.io/packagist/dt/wiistriker/doctrine-cursor-paginator.svg?style=flat-square

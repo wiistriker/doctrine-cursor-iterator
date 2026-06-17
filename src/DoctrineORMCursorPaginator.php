@@ -1,162 +1,99 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Wiistriker\DoctrineCursorPaginator;
 
 use Doctrine\ORM\AbstractQuery;
 use Doctrine\ORM\QueryBuilder;
-use IteratorAggregate;
-use Symfony\Component\PropertyAccess\PropertyAccess;
-use Symfony\Component\PropertyAccess\PropertyAccessorInterface;
 use Doctrine\ORM\Query\Expr;
-use Traversable;
-use LogicException;
+use Symfony\Component\PropertyAccess\PropertyAccessorInterface;
 use Wiistriker\DoctrineCursorPaginator\Exception\InvalidArgumentException;
 
 /**
  * @template T
+ * @extends AbstractCursorPaginator<T>
  */
-class DoctrineORMCursorPaginator implements IteratorAggregate
+class DoctrineORMCursorPaginator extends AbstractCursorPaginator
 {
     protected QueryBuilder $queryBuilder;
     protected int $hydrationMode;
+
+    /** @var array<string, mixed> */
     protected array $queryHints;
-    protected PropertyAccessorInterface $propertyAccessor;
 
-    protected array $orderByProperties;
-    protected int $orderByPropertiesCnt;
-    protected int $maxResultsCnt;
-
+    /**
+     * @param array<string, mixed> $queryHints
+     */
     public function __construct(
         QueryBuilder $queryBuilder,
         int $hydrationMode = AbstractQuery::HYDRATE_OBJECT,
         array $queryHints = [],
-        PropertyAccessorInterface $propertyAccessor = null
+        ?PropertyAccessorInterface $propertyAccessor = null
     ) {
-        if (!class_exists(QueryBuilder::class)) {
-            throw new LogicException('doctrine/orm is required to use DoctrineORMCursorPaginator. Run: composer require doctrine/orm');
-        }
-
         $orderByProperties = [];
-        $orderByPropertiesCnt = 0;
         foreach ($queryBuilder->getDQLPart('orderBy') as $orderByPart) {
             $orderByPartFirst = $orderByPart->getParts()[0];
-            if (preg_match('/^([a-z0-9_]*)\.([a-z0-9_]*)\s+(ASC|DESC)$/i', $orderByPartFirst, $matches)) {
-                $orderField = $matches[1] . '.' . $matches[2];
-
+            if (preg_match('/^([a-z0-9_]+)\.([a-z0-9_]+)\s+(ASC|DESC)$/i', $orderByPartFirst, $matches)) {
                 $orderByProperties[] = [
-                    'field' => $orderField,
+                    'field' => $matches[1] . '.' . $matches[2],
                     'property' => $matches[2],
-                    'is_asc' => mb_strtolower($matches[3], 'utf-8') === 'asc'
+                    'is_asc' => mb_strtolower($matches[3], 'utf-8') === 'asc',
                 ];
-
-                $orderByPropertiesCnt++;
             }
         }
 
-        if ($orderByPropertiesCnt === 0) {
-            throw new InvalidArgumentException('No order properties found. Please specify order properties by calling orderBy() or addOrderBy() method on query builder.');
-        }
-
         $maxResultsCnt = $queryBuilder->getMaxResults();
-
         if ($maxResultsCnt === null) {
             throw new InvalidArgumentException('No max results found. Please specify maxResultsCnt parameter by calling setMaxResults() method on query builder.');
         }
 
-        if ($maxResultsCnt <= 0) {
-            throw new InvalidArgumentException('Max results should be greater than zero.');
-        }
+        parent::__construct($maxResultsCnt, $orderByProperties, $propertyAccessor);
 
-        $this->queryBuilder = clone($queryBuilder);
+        $this->queryBuilder = clone $queryBuilder;
         $this->hydrationMode = $hydrationMode;
         $this->queryHints = $queryHints;
-        $this->propertyAccessor = $propertyAccessor ?: PropertyAccess::createPropertyAccessor();
-
-        $this->orderByProperties = $orderByProperties;
-        $this->orderByPropertiesCnt = $orderByPropertiesCnt;
-        $this->maxResultsCnt = $maxResultsCnt;
     }
 
     /**
-     * @return Traversable<int, T>
+     * @param array<string, mixed> $lastPropertiesValues
+     * @return iterable<int, T>
      */
-    public function getIterator(): Traversable
+    protected function executePageQuery(array $lastPropertiesValues): iterable
     {
-        $lastPropertiesValues = [];
-        $endReached = false;
+        $cursorQb = clone $this->queryBuilder;
 
-        do {
-            $cursorQb = clone($this->queryBuilder);
+        if ($lastPropertiesValues) {
+            $expr = $cursorQb->expr();
 
-            if ($lastPropertiesValues) {
-                $expr = $cursorQb->expr();
+            $nested = null;
+            foreach ($this->buildComparisons() as $comparison) {
+                $expression = new Expr\Comparison(
+                    $comparison['field'],
+                    $comparison['operator'],
+                    ':' . $comparison['property']
+                );
 
-                $nested = null;
-                for ($i = $this->orderByPropertiesCnt - 1; $i >= 0; $i--) {
-                    $orderByProperty = $this->orderByProperties[$i];
-
-                    $comparison = new Expr\Comparison(
-                        $orderByProperty['field'],
-                        $orderByProperty['is_asc'] ? Expr\Comparison::GT : Expr\Comparison::LT,
-                        ':' . $orderByProperty['property']
+                if ($nested === null) {
+                    $nested = $expression;
+                } else {
+                    $nested = $expr->orX(
+                        $expression,
+                        $expr->andX($expr->eq($comparison['field'], ':' . $comparison['property']), $nested)
                     );
-
-                    if ($nested === null) {
-                        $nested = $comparison;
-                    } else {
-                        $nested = $expr->orX($comparison, $expr->andX($expr->eq($orderByProperty['field'], ':' . $orderByProperty['property']), $nested));
-                    }
-
-                    $cursorQb->setParameter($orderByProperty['property'], $lastPropertiesValues[$orderByProperty['property']]);
                 }
 
-                $cursorQb->andWhere($nested);
+                $cursorQb->setParameter($comparison['property'], $lastPropertiesValues[$comparison['property']]);
             }
 
-            $cursorQuery = $cursorQb->getQuery();
-            foreach ($this->queryHints as $hintName => $hintValue) {
-                $cursorQuery->setHint($hintName, $hintValue);
-            }
-
-            $itemsCnt = 0;
-            foreach ($cursorQuery->getResult($this->hydrationMode) as $item) {
-                foreach ($this->orderByProperties as $orderByProperty) {
-                    $property_path = is_array($item) ? '[' . $orderByProperty['property'] . ']' : $orderByProperty['property'];
-                    $lastPropertiesValues[$orderByProperty['property']] = $this->propertyAccessor->getValue($item, $property_path);
-                }
-
-                yield $item;
-
-                $itemsCnt++;
-            }
-
-            if ($itemsCnt < $this->maxResultsCnt) {
-                $endReached = true;
-            }
-        } while (!$endReached);
-    }
-
-    /**
-     * @return Traversable<int, T[]>
-     */
-    public function batch(?int $size = null): Traversable
-    {
-        $size = $size ?? $this->queryBuilder->getMaxResults();
-
-        $batch = [];
-        $batchSize = 0;
-        foreach ($this->getIterator() as $item) {
-            $batch[] = $item;
-            $batchSize++;
-            if ($batchSize >= $size) {
-                yield $batch;
-                $batch = [];
-                $batchSize = 0;
-            }
+            $cursorQb->andWhere($nested);
         }
 
-        if (!empty($batch)) {
-            yield $batch;
+        $cursorQuery = $cursorQb->getQuery();
+        foreach ($this->queryHints as $hintName => $hintValue) {
+            $cursorQuery->setHint($hintName, $hintValue);
         }
+
+        yield from $cursorQuery->getResult($this->hydrationMode);
     }
 }
