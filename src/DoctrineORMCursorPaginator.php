@@ -17,12 +17,15 @@ use Wiistriker\DoctrineCursorPaginator\Exception\InvalidArgumentException;
 class DoctrineORMCursorPaginator extends AbstractCursorPaginator
 {
     protected QueryBuilder $queryBuilder;
+
+    /** @var int<1, 6> */
     protected int $hydrationMode;
 
     /** @var array<string, mixed> */
     protected array $queryHints;
 
     /**
+     * @param int<1, 6> $hydrationMode
      * @param array<string, mixed> $queryHints
      */
     public function __construct(

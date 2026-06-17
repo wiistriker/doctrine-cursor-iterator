@@ -139,17 +139,21 @@ class DoctrineDBALCursorPaginator extends AbstractCursorPaginator
                 $cursorQb->setParameter($comparison['property'], $lastPropertiesValues[$comparison['property']]);
             }
 
-            $cursorQb->andWhere($nested);
+            if ($nested !== null) {
+                $cursorQb->andWhere($nested);
+            }
         }
 
-        if (method_exists($cursorQb, 'executeQuery')) {
+        // Compatibility shims for DBAL 2.x
+        if (method_exists($cursorQb, 'executeQuery')) { // @phpstan-ignore function.alreadyNarrowedType
             $stmt = $cursorQb->executeQuery();
         } else {
-            $stmt = $cursorQb->execute();
+            $stmt = $cursorQb->execute(); // @phpstan-ignore method.notFound
         }
 
+        // Compatibility shims for DBAL 2.x
         if (method_exists($stmt, 'fetchAllAssociative')) {
-            $results = $stmt->fetchAllAssociative();
+            $results = $stmt->fetchAllAssociative(); // @phpstan-ignore method.nonObject
         } else {
             $results = $stmt->fetchAll();
         }

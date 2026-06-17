@@ -13,7 +13,7 @@ use Wiistriker\DoctrineCursorPaginator\DoctrineDBALCursorPaginator;
 
 class DoctrineDBALCursorPaginatorTest extends TestCase
 {
-    private ?Connection $connection;
+    private Connection $connection;
     private TestLogger $queryLogger;
 
     public function testWithId(): void
@@ -260,8 +260,6 @@ class DoctrineDBALCursorPaginatorTest extends TestCase
     {
         $this->connection->close();
 
-        unset($this->connection);
-        $this->connection = null;
         $this->queryLogger->reset();
     }
 }

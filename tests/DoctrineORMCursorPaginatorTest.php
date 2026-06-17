@@ -15,7 +15,7 @@ use Doctrine\DBAL\Logging\Middleware as LoggingMiddleware;
 
 class DoctrineORMCursorPaginatorTest extends TestCase
 {
-    private ?EntityManager $entityManager;
+    private EntityManager $entityManager;
     private TestLogger $queryLogger;
 
     public function testWithId(): void
@@ -259,13 +259,12 @@ class DoctrineORMCursorPaginatorTest extends TestCase
 
     protected function tearDown(): void
     {
-        if ($this->entityManager !== null && $this->entityManager->isOpen()) {
+        if ($this->entityManager->isOpen()) {
             $conn = $this->entityManager->getConnection();
             $this->entityManager->close();
             $conn->close();
         }
 
-        $this->entityManager = null;
         $this->queryLogger->reset();
     }
 }
