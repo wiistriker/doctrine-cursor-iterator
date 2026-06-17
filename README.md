@@ -12,6 +12,13 @@ Iterate through large database results with easy
 composer require wiistriker/doctrine-cursor-paginator
 ```
 
+## Usage
+
+Both Doctrine ORM and DBAL query builders are supported:
+
+- [Usage for ORM](#usage-for-orm)
+- [Usage for DBAL](#usage-for-dbal)
+
 ## Usage for ORM
 
 Create query builder as usual. Dont forget about `orderBy` and `maxResults`.
@@ -98,11 +105,11 @@ foreach ($cursorPaginator->batch() as $entities) {
 By default batch size equals to `maxResults` but you can also specify desired amount by yourself:
 
 ```php
-$my_batch_size = 1000;
+$myBatchSize = 1000;
 
 $cursorPaginator = new DoctrineORMCursorPaginator($qb);
 
-foreach ($cursorPaginator->batch($my_batch_size) as $entities) {
+foreach ($cursorPaginator->batch($myBatchSize) as $entities) {
 }
 ```
 
